@@ -1,0 +1,18 @@
+services:
+  scale-hub:
+    build: .
+    container_name: groundup-scale-hub
+    ports:
+      - "8420:8420"
+    volumes:
+      - hub-data:/data
+      - ./plu_map.json:/data/plu_map.json:ro
+    environment:
+      GROUNDUP_DATA_DIR: /data
+      GROUNDUP_MOCK_SERIAL: "1"
+      GROUNDUP_HMAC_SECRET: ${GROUNDUP_HMAC_SECRET:-dev-secret-change-me}
+      GROUNDUP_GS1_BASE_URL: ${GROUNDUP_GS1_BASE_URL:-https://groundup.bio}
+    restart: unless-stopped
+
+volumes:
+  hub-data:

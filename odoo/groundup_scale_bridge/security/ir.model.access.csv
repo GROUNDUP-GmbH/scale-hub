@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_groundup_scale_device_user,groundup.scale.device.user,model_groundup_scale_device,point_of_sale.group_pos_user,1,0,0,0
+access_groundup_scale_device_manager,groundup.scale.device.manager,model_groundup_scale_device,point_of_sale.group_pos_manager,1,1,1,1
+access_groundup_scale_log_user,groundup.scale.log.user,model_groundup_scale_log,point_of_sale.group_pos_user,1,0,0,0
+access_groundup_scale_log_manager,groundup.scale.log.manager,model_groundup_scale_log,point_of_sale.group_pos_manager,1,1,1,0
+access_groundup_scale_plu_user,groundup.scale.plu.user,model_groundup_scale_plu,point_of_sale.group_pos_user,1,0,0,0
+access_groundup_scale_plu_manager,groundup.scale.plu.manager,model_groundup_scale_plu,point_of_sale.group_pos_manager,1,1,1,1

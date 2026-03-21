@@ -1,0 +1,137 @@
+# AT — Country Compliance Data — Scale Hub / Labeling / Direct Sales
+# Fully researched for Austria
+# Maintained by: Jóska Compliance Agent (regulatory-watch skill)
+# Schema version: 2.0
+
+country_code: AT
+country_name: Österreich
+last_review: "2026-03-21"
+next_review: "2026-06-21"
+maintained_by: "Jóska Compliance Agent (regulatory-watch skill)"
+legal_system: eu_member
+
+labeling:
+  loose_sale:
+    label_required: false
+    allergen_info: oral_with_written_backup
+    price_display: required
+    source_ref: "LMIV Art. 44, Allergeninformationsverordnung BGBl. II Nr. 175/2014, PAngV AT"
+  simple_prepack:
+    mandatory_fields:
+      - product_name
+      - net_weight
+      - best_before_date
+      - operator_name_address
+      - origin
+      - lot_number
+    allergen_display: bold_in_ingredients
+    nutrition_declaration: exempt
+    source_ref: "LMIV Art. 9, Anhang V Nr. 19 (< 10 MA, < 2M EUR Umsatz)"
+  full_prepack:
+    mandatory_fields:
+      - product_name
+      - ingredients_list
+      - allergens
+      - net_weight
+      - best_before_date
+      - operator_name_address
+      - origin
+      - lot_number
+      - storage_instructions
+    allergen_display: bold_in_ingredients
+    nutrition_declaration: exempt
+    source_ref: "LMIV Art. 9, Anhang V Nr. 19"
+  leh_prepack:
+    mandatory_fields:
+      - product_name
+      - ingredients_list
+      - allergens
+      - net_weight
+      - best_before_date
+      - operator_name_address
+      - origin
+      - lot_number
+      - storage_instructions
+      - nutrition_declaration_big_seven
+      - ean_barcode
+    allergen_display: bold_in_ingredients
+    nutrition_declaration: required
+    barcode: dual
+    source_ref: "LMIV Art. 9, Art. 30, Anhang XIII; GS1 Sunrise 2027"
+
+cash_register:
+  general_threshold_net: 15000
+  outdoor_market_threshold_net: 45000
+  receipt_obligation: above_threshold
+  digital_receipt_system: RKSV
+  source_ref: "BAO § 131b, RKSV BGBl. II Nr. 410/2015, Kalte-Hände-Regelung ab 2026"
+
+metrology:
+  scale_certification: NAWI_2014_31_EU
+  national_authority: BEV
+  calibration_interval_years: 2
+  hub_certification_required: false
+  pos_system_requires_pruefbescheinigung: true
+  source_ref: "MEG AT, Waagenverordnung BGBl. Nr. 30/2016, BEV Informationsblatt POS-Systeme 2023"
+
+gs1:
+  member_org: GS1_Austria
+  country_prefix: "90/91"
+  digital_link_pos_ready: false
+  sunrise_2027_status: transition
+  source_ref: "GS1 Austria, gs1.at"
+
+vat_food:
+  standard_rate: 20
+  reduced_rate: 10
+  zero_rate_categories:
+    - raw_milk_farmgate
+  source_ref: "UStG AT § 10"
+
+ce_marking:
+  emv_required: true
+  lvd_applicable: false
+  red_applicable: true
+  rohs_required: true
+  custom_enclosure_emv_test: true
+  estimated_cost_eur: "2000-5000"
+  source_ref: "EMV 2014/30/EU, LVD 2014/35/EU, RED 2014/53/EU, RoHS 2011/65/EU"
+
+product_liability:
+  directive: "2024/2853"
+  effective_date: "2026-12-09"
+  software_is_product: true
+  insurance_required: true
+  source_ref: "RL (EU) 2024/2853, PHG AT (BGBl. Nr. 99/1988)"
+
+weee:
+  registration_authority: ERA
+  registration_url: "https://www.era-gmbh.at/"
+  category: "3_IT_telecom"
+  symbol_required: true
+  estimated_cost_per_device_eur: "1-3"
+  source_ref: "WEEE 2012/19/EU, EAG-VO AT"
+
+data_protection:
+  gdpr_applicable: true
+  operator_ids_pseudonymized: true
+  avv_required_for_managed_service: true
+  dpa_authority: "Datenschutzbehörde (dsb.gv.at)"
+  source_ref: "DSGVO (EU) 2016/679, DSG AT (BGBl. I Nr. 165/1999)"
+
+packaging:
+  fertigpackung_directive: "76/211/EWG"
+  e_symbol_required_for_fixed_weight: true
+  tolerance_table: "see FERTIGPACKUNG_76_211.md"
+  min_font_size_net_weight: "see FERTIGPACKUNG_76_211.md"
+  national_authority: BEV
+  source_ref: "RL 76/211/EWG, FPVO AT, LMIV Art. 23"
+
+label_formatting:
+  min_x_height_mm: 1.2
+  min_x_height_small_label_mm: 0.9
+  small_label_threshold_cm2: 80
+  allergen_highlight_method: "CAPS_or_bold"
+  nutrition_format: "table_preferred"
+  nutrition_fallback: "inline_text"
+  source_ref: "LMIV Art. 13, Art. 21, Art. 34"

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="groundup_scale_plu_list" model="ir.ui.view">
+        <field name="name">groundup.scale.plu.list</field>
+        <field name="model">groundup.scale.plu</field>
+        <field name="arch" type="xml">
+            <list string="PLU Mappings" editable="bottom"
+                  decoration-warning="sync_status == 'pending'"
+                  decoration-danger="sync_status == 'error'"
+                  decoration-success="sync_status == 'synced'">
+                <field name="device_id"/>
+                <field name="plu_number"/>
+                <field name="product_id"/>
+                <field name="unit_price"/>
+                <field name="gtin"/>
+                <field name="sync_status"/>
+                <field name="last_synced"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="groundup_scale_plu_action" model="ir.actions.act_window">
+        <field name="name">PLU Mappings</field>
+        <field name="res_model">groundup.scale.plu</field>
+        <field name="view_mode">list</field>
+    </record>
+
+</odoo>

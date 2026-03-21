@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <record id="groundup_scale_device_form" model="ir.ui.view">
+        <field name="name">groundup.scale.device.form</field>
+        <field name="model">groundup.scale.device</field>
+        <field name="arch" type="xml">
+            <form string="Scale Device">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Device Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="device_id"/>
+                            <field name="scale_model"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Connection">
+                            <field name="hub_url"/>
+                            <field name="serial_port_a"/>
+                            <field name="serial_port_b"/>
+                            <field name="baudrate"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="location"/>
+                    </group>
+                    <notebook>
+                        <page string="PLU Mappings" name="plus">
+                            <field name="plu_ids">
+                                <list editable="bottom">
+                                    <field name="plu_number"/>
+                                    <field name="product_id"/>
+                                    <field name="unit_price"/>
+                                    <field name="gtin"/>
+                                    <field name="sync_status"/>
+                                    <field name="last_synced"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Audit Log" name="logs">
+                            <field name="log_ids" readonly="1">
+                                <list>
+                                    <field name="create_date"/>
+                                    <field name="event_type"/>
+                                    <field name="entry_hash"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes" placeholder="Internal notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="groundup_scale_device_list" model="ir.ui.view">
+        <field name="name">groundup.scale.device.list</field>
+        <field name="model">groundup.scale.device</field>
+        <field name="arch" type="xml">
+            <list string="Scale Devices">
+                <field name="name"/>
+                <field name="device_id"/>
+                <field name="scale_model"/>
+                <field name="hub_url"/>
+                <field name="location"/>
+                <field name="active"/>
+                <field name="log_count" string="Logs"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="groundup_scale_device_action" model="ir.actions.act_window">
+        <field name="name">Scale Devices</field>
+        <field name="res_model">groundup.scale.device</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

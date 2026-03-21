@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale Hub — Ground UP</title>
+<style>
+:root {
+  --bg-dark: #0a0a0a;
+  --bg-mid: #111;
+  --bg-light: #fafafa;
+  --bg-card: #161616;
+  --fg-white: #f5f5f5;
+  --fg-dim: #888;
+  --fg-dark: #1a1a1a;
+  --fg-body: #444;
+  --border-dark: #222;
+  --border-light: #e5e5e5;
+  --accent: #22c55e;
+  --accent-dim: rgba(34,197,94,0.12);
+  --mono: "SF Mono", "Fira Code", "Cascadia Code", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── DARK SECTIONS ── */
+.dark { background: var(--bg-dark); color: var(--fg-white); }
+.dark a { color: var(--accent); }
+.dark .dim { color: var(--fg-dim); }
+
+/* ── LIGHT SECTIONS ── */
+.light { background: var(--bg-light); color: var(--fg-dark); }
+.light a { color: var(--fg-dark); }
+.light .dim { color: var(--fg-body); }
+
+.container { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ── NAV ── */
+nav { padding: 1rem 0; border-bottom: 1px solid var(--border-dark); }
+nav .inner { display: flex; justify-content: space-between; align-items: center; }
+nav .brand { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+nav .brand img { height: 20px; }
+nav .links { display: flex; gap: 1.25rem; font-size: 0.8rem; }
+nav .links a { color: var(--fg-dim); }
+nav .links a:hover { color: var(--fg-white); text-decoration: none; }
+.pill { font-size: 0.65rem; font-family: var(--mono); color: var(--accent); background: var(--accent-dim); padding: 0.15rem 0.5rem; border-radius: 100px; margin-left: 0.5rem; }
+
+/* ── HERO ── */
+.hero { padding: 5rem 0 4rem; text-align: center; }
+.hero h1 { font-size: 2.8rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.15; margin-bottom: 1.25rem; }
+@media (max-width: 640px) { .hero h1 { font-size: 1.8rem; } }
+.hero .sub { font-size: 1.05rem; color: var(--fg-dim); max-width: 600px; margin: 0 auto 2rem; line-height: 1.6; }
+.hero .ctas { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; transition: all 0.15s; }
+.btn-accent { background: var(--accent); color: #000; }
+.btn-accent:hover { background: #16a34a; text-decoration: none; }
+.btn-outline { border: 1px solid var(--border-dark); color: var(--fg-dim); }
+.btn-outline:hover { border-color: var(--fg-dim); color: var(--fg-white); text-decoration: none; }
+.hero .use-cases { margin-top: 2.5rem; font-size: 0.8rem; color: var(--fg-dim); font-family: var(--mono); }
+
+/* ── PRODUCT IMAGE ── */
+.product-shot { max-width: 720px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+.product-shot .frame { background: var(--bg-card); border: 1px solid var(--border-dark); border-radius: 12px; padding: 3rem 2rem; text-align: center; }
+.product-shot .icons { font-size: 3.5rem; margin-bottom: 1rem; letter-spacing: 0.5rem; }
+.product-shot .caption { font-size: 0.8rem; color: var(--fg-dim); }
+.product-shot .caption em { display: block; margin-top: 0.5rem; font-size: 0.75rem; }
+
+/* ── SECTION HEADERS ── */
+.section-header { padding: 4rem 0 2rem; }
+.section-header .label { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+.dark .section-header .label { color: var(--accent); }
+.light .section-header .label { color: var(--fg-body); }
+.section-header h2 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.3; }
+@media (max-width: 640px) { .section-header h2 { font-size: 1.3rem; } }
+.section-header p { margin-top: 0.5rem; font-size: 0.95rem; line-height: 1.6; max-width: 640px; }
+.dark .section-header p { color: var(--fg-dim); }
+.light .section-header p { color: var(--fg-body); }
+
+/* ── PAIN LIST ── */
+.pain-list { list-style: none; padding: 0 0 3rem; }
+.pain-list li { padding: 0.65rem 0; font-size: 0.9rem; display: flex; align-items: baseline; gap: 0.75rem; border-bottom: 1px solid var(--border-dark); }
+.pain-list li:last-child { border-bottom: none; }
+.pain-list .arrow { color: var(--fg-dim); font-family: var(--mono); flex-shrink: 0; font-size: 0.8rem; }
+
+/* ── FEATURE GRID ── */
+.features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border-dark); padding-bottom: 4rem; }
+@media (max-width: 640px) { .features { grid-template-columns: 1fr; } }
+.feature { background: var(--bg-dark); padding: 1.75rem; }
+.feature .icon { font-size: 1.3rem; margin-bottom: 0.75rem; }
+.feature h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+.feature p { font-size: 0.8rem; color: var(--fg-dim); line-height: 1.6; }
+
+/* ── SCENARIO GRID ── */
+.scenarios { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border-light); }
+@media (max-width: 800px) { .scenarios { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .scenarios { grid-template-columns: 1fr; } }
+.scenario { background: var(--bg-light); padding: 1.5rem; }
+.scenario h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; }
+.scenario .context { font-family: var(--mono); font-size: 0.7rem; color: var(--fg-body); margin-bottom: 0.75rem; }
+.scenario ul { list-style: none; font-size: 0.8rem; color: var(--fg-body); }
+.scenario ul li { padding: 0.15rem 0; }
+.scenario ul li::before { content: "✓"; color: var(--accent); margin-right: 0.4rem; font-weight: 700; }
+.scenario.active { border-top: 2px solid var(--accent); }
+
+/* ── STEPS ── */
+.steps { padding-bottom: 4rem; }
+.step { display: flex; gap: 1.5rem; padding: 1.5rem 0; border-bottom: 1px solid var(--border-dark); align-items: flex-start; }
+.step:last-child { border-bottom: none; }
+.step-num { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; color: var(--accent); min-width: 2rem; }
+.step h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+.step p { font-size: 0.85rem; color: var(--fg-dim); line-height: 1.6; }
+
+/* ── STATS ── */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border-dark); }
+@media (max-width: 640px) { .stats { grid-template-columns: 1fr; } }
+.stat { background: var(--bg-dark); padding: 2rem 1.5rem; text-align: center; }
+.stat .number { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
+.stat .desc { font-size: 0.75rem; color: var(--fg-dim); margin-top: 0.25rem; font-family: var(--mono); }
+
+/* ── FAQ ── */
+.faq { padding-bottom: 4rem; }
+.faq details { border-bottom: 1px solid var(--border-light); }
+.faq details:first-of-type { border-top: 1px solid var(--border-light); }
+.faq summary { padding: 1rem 0; cursor: pointer; font-size: 0.9rem; font-weight: 500; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--mono); color: var(--fg-body); font-size: 1rem; }
+.faq details[open] summary::after { content: "−"; }
+.faq .answer { padding: 0 0 1rem; font-size: 0.85rem; color: var(--fg-body); line-height: 1.7; max-width: 640px; }
+
+/* ── CTA BANNER ── */
+.cta-banner { padding: 4rem 0; text-align: center; border-top: 1px solid var(--border-dark); }
+.cta-banner h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+.cta-banner p { color: var(--fg-dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
+.cta-banner .ctas { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+/* ── DOCS GRID ── */
+.docs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; padding-bottom: 4rem; }
+.doc-link { display: block; padding: 1rem; border: 1px solid var(--border-light); border-radius: 6px; font-size: 0.8rem; color: var(--fg-dark); transition: border-color 0.15s; }
+.doc-link:hover { border-color: var(--fg-body); text-decoration: none; }
+.doc-link .title { font-weight: 600; margin-bottom: 0.2rem; }
+.doc-link .desc { color: var(--fg-body); font-size: 0.75rem; }
+
+/* ── FOOTER ── */
+footer { padding: 2rem 0; border-top: 1px solid var(--border-dark); font-size: 0.75rem; color: var(--fg-dim); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+footer a { color: var(--fg-dim); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ DARK: NAV ══════════════════════ -->
+<div class="dark">
+<nav>
+  <div class="container inner">
+    <div class="brand">Ground UP <span class="pill">Scale Hub</span></div>
+    <div class="links">
+      <a href="https://groundup.farm">groundup.farm</a>
+      <a href="https://github.com/GROUNDUP-GmbH/BodenKraft_odoo_modules">GitHub</a>
+      <a href="ARCHITECTURE.md">Docs</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════ DARK: HERO ══════════════════════ -->
+<div class="container">
+<div class="hero">
+  <h1>Verkauf einfach.<br>Etikett korrekt. Fertig.</h1>
+  <p class="sub">Du baust großartige Produkte an. Der Scale Hub sorgt dafür, dass das Etikett stimmt, der Bon stimmt und du dich aufs Verkaufen konzentrieren kannst.</p>
+  <div class="ctas">
+    <a class="btn btn-accent" href="https://groundup.farm/de/contact">Interesse melden</a>
+    <a class="btn btn-outline" href="#szenarien">Szenarien ansehen</a>
+  </div>
+  <p class="use-cases">Hofladen · Wochenmarkt · Abpackstation · Einzelhandel</p>
+</div>
+</div>
+
+<!-- ══════════════════════ DARK: PRODUCT SHOT ══════════════════════ -->
+<div class="product-shot">
+  <div class="frame">
+    <div class="icons">⚖️ 📦 🏷️</div>
+    <div class="caption">
+      CAS ER-Plus Waage · Scale Hub · Zebra Labeldrucker
+      <em>Produktfoto folgt — das hier wird bald echt.</em>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ DARK: PROBLEM ══════════════════════ -->
+<div class="container">
+<div class="section-header">
+  <div class="label">Das kennt jeder Direktvermarkter</div>
+  <h2>Kommt dir das bekannt vor?</h2>
+</div>
+<ul class="pain-list">
+  <li><span class="arrow">→</span> Du weißt nie genau, was alles auf das Etikett muss — und es ändert sich ständig</li>
+  <li><span class="arrow">→</span> Am Marktstand willst du verkaufen, nicht über Vorschriften nachdenken</li>
+  <li><span class="arrow">→</span> Für den Hofladen brauchst du andere Angaben als für den Wochenmarkt</li>
+  <li><span class="arrow">→</span> Wenn ein Supermarkt anfragen würde — hättest du das richtige Label parat?</li>
+  <li><span class="arrow">→</span> Die Waage zeigt den Preis an, aber die Kasse weiß davon nichts</li>
+  <li><span class="arrow">→</span> Labels von Hand schreiben oder Excel-Listen pflegen kostet Stunden</li>
+</ul>
+</div>
+
+<!-- ══════════════════════ DARK: STAKES ══════════════════════ -->
+<div class="stats">
+  <div class="stat">
+    <div class="number">26</div>
+    <div class="desc">Pflichtangaben auf einem Einzelhandels-Etikett</div>
+  </div>
+  <div class="stat">
+    <div class="number">28</div>
+    <div class="desc">EU-Länder mit eigenen Zusatzregeln</div>
+  </div>
+  <div class="stat">
+    <div class="number">0</div>
+    <div class="desc">davon musst du auswendig wissen</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ DARK: FEATURES ══════════════════════ -->
+<div class="container">
+<div class="section-header">
+  <div class="label">Die Lösung</div>
+  <h2>Dein Verkaufsassistent — er kennt die Vorschriften.</h2>
+  <p>Der Scale Hub verbindet deine Waage mit deinem Kassensystem und deinem Labeldrucker. Du wählst das Produkt. Den Rest macht er.</p>
+</div>
+</div>
+
+<div class="features">
+  <div class="feature">
+    <div class="icon">⚖️</div>
+    <h3>Waage und Kasse verbunden</h3>
+    <p>Die Waage wiegt und rechnet den Preis. Die Kasse bucht den Verkauf. Der Hub verbindet beides — kein Abtippen.</p>
+  </div>
+  <div class="feature">
+    <div class="icon">🏷️</div>
+    <h3>Etikett automatisch richtig</h3>
+    <p>Produktname, Gewicht, Preis, Herkunft, Allergene, Haltbarkeit — genau das, was drauf muss. Nicht mehr, nicht weniger.</p>
+  </div>
+  <div class="feature">
+    <div class="icon">🇪🇺</div>
+    <h3>Funktioniert in jedem EU-Land</h3>
+    <p>EU-weit geregelt, aber jedes Land hat Besonderheiten. Der Hub kennt sie und passt sich an.</p>
+  </div>
+  <div class="feature">
+    <div class="icon">📱</div>
+    <h3>QR-Code für deine Kunden</h3>
+    <p>Jedes Etikett kann einen QR-Code enthalten — direkt zu deinem Onlineshop oder zu Produktinfos, nach internationalem Standard.</p>
+  </div>
+</div>
+
+</div><!-- /dark -->
+
+<!-- ══════════════════════ LIGHT: SZENARIEN ══════════════════════ -->
+<div class="light" id="szenarien">
+<div class="container">
+<div class="section-header">
+  <div class="label">Wo du verkaufst</div>
+  <h2>Vier Situationen — der Hub weiß, was zu tun ist.</h2>
+  <p>Du legst einmal pro Produkt fest, wie es verkauft wird. Der Rest läuft automatisch.</p>
+</div>
+</div>
+
+<div class="scenarios">
+  <div class="scenario">
+    <h3>Am Marktstand</h3>
+    <div class="context">Lose Ware, direkt an den Kunden</div>
+    <ul>
+      <li>Kein Etikett nötig</li>
+      <li>Waage zeigt Preis</li>
+      <li>Allergene mündlich</li>
+      <li>Optional: Kassenbon</li>
+    </ul>
+  </div>
+  <div class="scenario active">
+    <h3>Im Hofladen</h3>
+    <div class="context">Vorverpackt: Honig, Obst, Gemüse</div>
+    <ul>
+      <li>Name und Gewicht</li>
+      <li>Preis und Herkunft</li>
+      <li>Haltbarkeit</li>
+      <li>Betrieb und Adresse</li>
+      <li>QR-Code zum Shop</li>
+    </ul>
+  </div>
+  <div class="scenario active">
+    <h3>Abpackstation</h3>
+    <div class="context">Verarbeitet: Marmelade, Saft, Aufstrich</div>
+    <ul>
+      <li>Alles vom Hofladen, plus:</li>
+      <li>Zutatenverzeichnis</li>
+      <li>Allergene hervorgehoben</li>
+      <li>Lagerbedingungen</li>
+    </ul>
+  </div>
+  <div class="scenario active">
+    <h3>Für den Einzelhandel</h3>
+    <div class="context">Spar, Billa, Hofer, ADEG, Lidl, …</div>
+    <ul>
+      <li>Alles von oben, plus:</li>
+      <li>Nährwerttabelle</li>
+      <li>Barcode für die Kasse</li>
+      <li>QR mit Rückverfolgung</li>
+      <li>Losnummer</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════ LIGHT: FAQ ══════════════════════ -->
+<div class="container">
+<div class="section-header">
+  <div class="label">Häufige Fragen</div>
+  <h2>Was du wissen willst.</h2>
+</div>
+<div class="faq">
+  <details>
+    <summary>Welche Waagen werden unterstützt?</summary>
+    <div class="answer">Aktuell: CAS ER-Plus mit RS232-Modul — eine robuste, geeichte Preisrechnungswaage für den Direktverkauf. Weitere Waagen folgen.</div>
+  </details>
+  <details>
+    <summary>Brauche ich eine Zertifizierung für den Hub?</summary>
+    <div class="answer">Nein. Die Waage ist das geeichte Messgerät und bleibt es. Der Hub verändert weder Gewicht noch Preis — er leitet die Daten weiter und druckt das Etikett. Damit braucht er keine eigene Eichzulassung.</div>
+  </details>
+  <details>
+    <summary>Was passiert, wenn sich die Vorschriften ändern?</summary>
+    <div class="answer">Der Hub bezieht seine Kennzeichnungsregeln aus einer länderspezifischen Konfiguration, die laufend aktualisiert wird. Änderungen kommen automatisch als Update.</div>
+  </details>
+  <details>
+    <summary>Funktioniert das auch ohne Internet?</summary>
+    <div class="answer">Ja. Waage, Hub und Drucker arbeiten lokal. Internet brauchst du nur für Produktupdates und Software-Aktualisierungen.</div>
+  </details>
+  <details>
+    <summary>Kann ich den Hub auch ohne Odoo nutzen?</summary>
+    <div class="answer">Der Hub ist für die Zusammenarbeit mit Odoo optimiert — Produktdaten, Kasse, Lager, Webshop in einem System. Für reinen Labeldruck kann er auch eigenständig arbeiten.</div>
+  </details>
+  <details>
+    <summary>Sind meine Daten sicher?</summary>
+    <div class="answer">Alle Daten bleiben lokal auf dem Hub. Die Software ist manipulationsgeschützt — vom Start des Geräts bis zur Etikettenausgabe ist die gesamte Kette abgesichert.</div>
+  </details>
+  <details>
+    <summary>Was kostet das?</summary>
+    <div class="answer">Der Scale Hub ist in Entwicklung. Preise werden veröffentlicht, sobald der Pilot abgeschlossen ist. Melde dich, wenn du dabei sein willst.</div>
+  </details>
+</div>
+</div>
+
+<!-- ══════════════════════ LIGHT: DOCS ══════════════════════ -->
+<div class="container">
+<div class="section-header">
+  <div class="label">Für Entwickler & Fachleute</div>
+  <h2>Open Source. Alles dokumentiert.</h2>
+  <p>Der Scale Hub ist Open Source. Technische Architektur, Rechtsgrundlagen und Compliance-Dokumentation für alle EU-Länder sind auf GitHub.</p>
+</div>
+<div class="docs-grid">
+  <a class="doc-link" href="ARCHITECTURE.md">
+    <div class="title">Architektur</div>
+    <div class="desc">System, Datenflüsse, Security, Ports</div>
+  </a>
+  <a class="doc-link" href="LABEL_GUIDE.md">
+    <div class="title">Label Guide</div>
+    <div class="desc">Szenarien, Pflichtfelder, Umsetzung</div>
+  </a>
+  <a class="doc-link" href="LEGAL_REGISTER.md">
+    <div class="title">Rechtsregister</div>
+    <div class="desc">Gesetze, Entscheidungen, Quellen</div>
+  </a>
+  <a class="doc-link" href="legal/COMPLIANCE_MATRIX.md">
+    <div class="title">EU Compliance</div>
+    <div class="desc">Status aller 28 Länder</div>
+  </a>
+  <a class="doc-link" href="https://github.com/GROUNDUP-GmbH/BodenKraft_odoo_modules/tree/main/infrastructure/scale_hub">
+    <div class="title">Quellcode</div>
+    <div class="desc">FastAPI, ZPL, Audit, Docker</div>
+  </a>
+  <a class="doc-link" href="https://github.com/GROUNDUP-GmbH/BodenKraft_odoo_modules/wiki">
+    <div class="title">Wiki</div>
+    <div class="desc">Setup, Beitragen, Roadmap</div>
+  </a>
+</div>
+</div>
+</div><!-- /light -->
+
+<!-- ══════════════════════ DARK: CTA ══════════════════════ -->
+<div class="dark">
+<div class="container">
+<div class="cta-banner">
+  <h2>Bereit, es einfacher zu machen?</h2>
+  <p>Melde dein Interesse — oder schau dir an, wie Ground UP deinen gesamten Betrieb begleitet.</p>
+  <div class="ctas">
+    <a class="btn btn-accent" href="https://groundup.farm/de/contact">Interesse melden</a>
+    <a class="btn btn-outline" href="https://groundup.farm/de/joska">Jóska kennenlernen</a>
+  </div>
+</div>
+
+<footer>
+  <span>© 2025–2026 Ground UP GmbH · Iglasegasse 21-23, 1190 Wien · FN 481220 b</span>
+  <span><a href="https://groundup.farm/de/privacy">Datenschutz</a> · <a href="https://groundup.farm/de/impressum">Impressum</a></span>
+</footer>
+</div>
+</div>
+
+<script>
+document.querySelectorAll('.faq details').forEach(d => {
+  d.addEventListener('toggle', () => {
+    if (d.open) document.querySelectorAll('.faq details').forEach(o => { if (o !== d) o.open = false; });
+  });
+});
+</script>
+</body>
+</html>
