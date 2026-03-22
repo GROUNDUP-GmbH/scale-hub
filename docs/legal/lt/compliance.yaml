@@ -1,0 +1,61 @@
+# Country Compliance Data — Scale Hub / Labeling / Direct Sales
+# Template: Copy to lt/ and fill in country-specific values
+# Maintained by: Jóska Compliance Agent (regulatory-watch skill)
+# Schema version: 1.0
+
+country_code: LT
+country_name: Litauen
+last_review: null
+next_review: null
+maintained_by: "Jóska Compliance Agent (regulatory-watch skill)"
+legal_system: eu_member  # eu_member | eea | bilateral | other
+
+labeling:
+  loose_sale:
+    label_required: null
+    allergen_info: null  # oral | oral_with_written_backup | written_mandatory
+    price_display: null  # required | not_required
+    source_ref: null
+  simple_prepack:
+    mandatory_fields: null
+    allergen_display: null  # bold_in_ingredients | separate_list | both
+    nutrition_declaration: null  # required | exempt | conditional
+    source_ref: null
+  full_prepack:
+    mandatory_fields: null
+    allergen_display: null
+    nutrition_declaration: null
+    source_ref: null
+  leh_prepack:
+    mandatory_fields: null
+    allergen_display: null
+    nutrition_declaration: null  # always "required" for LEH
+    barcode: null  # ean13_only | dual | qr_only
+    source_ref: null
+
+cash_register:
+  general_threshold_net: null  # EUR (or local currency)
+  outdoor_market_threshold_net: null
+  receipt_obligation: null  # always | above_threshold | never
+  digital_receipt_system: null
+  source_ref: null
+
+metrology:
+  scale_certification: null
+  national_authority: null
+  calibration_interval_years: null
+  hub_certification_required: null
+  source_ref: null
+
+gs1:
+  member_org: null
+  country_prefix: null
+  digital_link_pos_ready: null
+  sunrise_2027_status: null  # not_started | planning | transition | ready
+  source_ref: null
+
+vat_food:
+  standard_rate: null
+  reduced_rate: null
+  zero_rate_categories: null
+  source_ref: null

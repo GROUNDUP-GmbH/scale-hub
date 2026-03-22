@@ -5,6 +5,7 @@
 > **Product Page:** [architecture.html](architecture.html)
 > **Technical Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
 > **Protocol Catalog:** [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)
+> **Certification Checklist:** [CERTIFICATION_CHECKLIST.md](CERTIFICATION_CHECKLIST.md)
 > **Label Guide:** [LABEL_GUIDE.md](LABEL_GUIDE.md)
 
 ---
