@@ -1,6 +1,6 @@
 # Scale Hub — Technical Architecture
 
-> **Status:** v3.0 · 2026-03-22
+> **Status:** v3.1 · 2026-03-22
 > **Maintainer:** Ground UP GmbH · FN 481220 b
 > **Product Page:** [architecture.html](architecture.html) (non-technical, StoryBrand)
 > **Legal Register:** [LEGAL_REGISTER.md](LEGAL_REGISTER.md)
@@ -11,23 +11,63 @@
 
 ## Core Principle
 
-**The certified scale is the sole authority for weight measurement and price calculation.**
+**The certified scale is the sole authority for weight measurement.** Price calculation is either performed by the scale (Tier 1/2) or by the Hub's Certified Core (Tier 0).
 
-Neither the Hub nor Odoo POS may alter measurement values or compute prices. The Hub is a controlled communication interface — classified as a "non-legally relevant ancillary system" under the European Software Guide for measuring instruments (WELMEC 7.2 §5.3).
+In Tier 1/2 mode, the Hub is a "non-legally relevant ancillary system" (WELMEC 7.2 §5.3) — no certification required. In Tier 0 mode, the Hub is a "certified ancillary device" (Zusatzeinrichtung mit Prüfzeugnis) — certification required but limited to the Certified Core (~500 lines of code).
 
 The Hub supports **multiple scale families** via an Adapter Pattern (see [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)):
 
-| Tier | Capability | Example Scales | Hub Role |
-|---|---|---|---|
-| **Tier 1** | Full PLU protocol | CAS LP/CL, DIGI SM, Mettler Toledo Tiger | PLU manager + data receiver |
-| **Tier 2** | Weight/price read-only | CAS ER-Plus, CAS AP, basic bench scales | Data receiver + virtual printer |
-| **Tier 2+** | Price send + weight receive | DIBAL | Price injector + data receiver |
+| Tier | Capability | Example Scales | Hub Role | Certification |
+|---|---|---|---|---|
+| **Tier 0** | Weight only | Any OIML Class III (€50–200) | **Price calculator** + label engine | **Required** (Certified Core) |
+| **Tier 1** | Full PLU protocol | CAS LP/CL, DIGI SM, Mettler Toledo Tiger | PLU manager + data receiver | Not required |
+| **Tier 2** | Weight/price read-only | CAS ER-Plus, CAS AP, basic bench scales | Data receiver + virtual printer | Not required |
+| **Tier 2+** | Price send + weight receive | DIBAL | Price injector + data receiver | Not required |
+
+**Tier 0 is the long-term target architecture** — see [PROTOCOL_CATALOG.md Option F](PROTOCOL_CATALOG.md#option-f-hub-as-certified-price-calculator--tier-0-recommended-long-term).
 
 **Sources:** Directive 2014/31/EU Art. 1(2)(a) · Austrian Metrology Act (MEG) §8(1) · WELMEC 7.2 §4.2 · BEV Information Sheet on POS Systems 2023
 
 ---
 
 ## System Boundary
+
+### Tier 0 Scale — Hub as Certified Price Calculator (Target Architecture)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  HUB — CERTIFIED CORE (Prüfzeugnis required — WELMEC 7.2 §4.2)     │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────┐       │
+│  │  weight_reader → price_calculator → consistency → audit  │       │
+│  │  (~500 LOC, frozen after certification)                  │       │
+│  └──────────────────────────┬───────────────────────────────┘       │
+│                              │                                       │
+│  ┌──────────────┐    ┌──────┴─────────┐    ┌──────────────────┐     │
+│  │  Odoo 19     │    │  Hub Periphery │    │  Zebra Label     │     │
+│  │  ERP / POS   │◄──►│  (uncertified) │───►│  Printer         │     │
+│  │              │    │                │    │  (ZPL II)        │     │
+│  │  • Products  │    │  • Label Engine│    └──────────────────┘     │
+│  │  • Prices    │    │  • Odoo Sync   │                              │
+│  │  • Booking   │    │  • Compliance  │    ┌──────────────────┐     │
+│  │  • Reports   │    │  • Dashboard   │    │  Customer Display│     │
+│  └──────────────┘    │  • OTA Updates │───►│  (7" HDMI/tablet)│     │
+│                      └───────┬────────┘    └──────────────────┘     │
+│                              │ RS-232 / USB                          │
+│                              │ (weight only, unidirectional)         │
+├──────────────────────────────┼───────────────────────────────────────┤
+│  SYSTEM BOUNDARY             │  WELMEC 7.2 §4.2 · Dir. 2014/31/EU  │
+├──────────────────────────────┼───────────────────────────────────────┤
+│  METROLOGICALLY REGULATED    │                                       │
+│  (Dir. 2014/31/EU · MEG §8) │                                       │
+│                      ┌───────┴────────┐                              │
+│                      │  ANY certified │  Hub reads weight only ✓     │
+│                      │  OIML Class III│  No data TO scale ✓          │
+│                      │  weight scale  │  No PLU, no price on scale   │
+│                      │  (€50–200)     │  Scale = pure weight sensor  │
+│                      └────────────────┘                              │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ### Tier 1 Scale (e.g., CAS LP, DIGI SM, Mettler Toledo Tiger)
 

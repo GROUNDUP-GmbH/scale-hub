@@ -17,11 +17,14 @@ The Hub uses an **Adapter Pattern** (see [ARCHITECTURE.md Decision 12](ARCHITECT
 
 ## Scale Tier Classification
 
-| Tier | Capability | Hub Role | PLU Sync | Price Updates |
-|---|---|---|---|---|
-| **Tier 1** | Full bidirectional PLU protocol | PLU manager + data receiver | Automatic from Odoo | Automatic via RS-232/Ethernet |
-| **Tier 2** | Weight/price read-only | Data receiver + virtual printer | Not possible via protocol | Manual on scale or Hub-assisted display |
-| **Tier 2+** | Price send + weight receive | Price injector + data receiver | Price only (no PLU name) | Automatic price, manual name |
+| Tier | Capability | Hub Role | PLU Sync | Price Calculation | Certification |
+|---|---|---|---|---|---|
+| **Tier 0** | Weight only (any OIML scale) | **Price calculator** + label engine | N/A (no PLU on scale) | **Hub calculates** | **Required** (€10–25k) |
+| **Tier 1** | Full bidirectional PLU protocol | PLU manager + data receiver | Automatic from Odoo | Scale calculates | Not required |
+| **Tier 2** | Weight/price read-only | Data receiver + virtual printer | Not possible via protocol | Scale calculates | Not required |
+| **Tier 2+** | Price send + weight receive | Price injector + data receiver | Price only (no PLU name) | Scale calculates | Not required |
+
+**Tier 0** is the long-term target architecture (see [Option F](#option-f-hub-as-certified-price-calculator--tier-0-recommended-long-term)). It decouples the Hub from any specific scale manufacturer and reduces the farmer's entry cost to ~€400.
 
 ---
 
@@ -478,15 +481,124 @@ CAS provides **ES-Works** (also called ER-Works) software for PLU management on 
 
 **Status:** Protocol not publicly documented. Would require reverse engineering or CAS partnership. **Not recommended for Phase 1.**
 
+### Option F: Hub as Certified Price Calculator — "Tier 0" (Recommended Long-Term)
+
+The Hub takes over **all** price calculation. The scale becomes a pure weight sensor.
+
+```
+┌───────────────┐     ┌──────────────────────────────────────────────┐
+│  ANY certified │     │  Hub (Raspberry Pi) — CERTIFIED CORE         │
+│  weight scale  │     │                                              │
+│                │     │  1. Receive weight_g (integer)               │
+│  €50–200       │────►│  2. Look up product → price_cents_per_kg     │
+│  OIML Class III│     │  3. total_cents = weight_g * price / 1000    │
+│  RS-232 or USB │     │  4. Display on screen (customer-facing)      │
+│                │     │  5. Print LMIV-compliant label               │
+│  • Weight only │     │  6. Forward to Odoo POS                      │
+│  • No PLU      │     │  7. Log in audit chain                       │
+│  • No price    │     │                                              │
+│  • No display  │     │  Certified Core = Steps 1–4 + 7              │
+│    needed      │     │  Uncertified Periphery = Steps 5–6           │
+└───────────────┘     └──────────────────────────────────────────────┘
+```
+
+**Why this is the best long-term architecture:**
+
+1. **Maximum scale compatibility:** ANY OIML-certified weight scale works — no PLU protocol needed, no specific manufacturer, no RS-232 printer emulation hacks. Even a €50 platform scale with USB output.
+
+2. **Single source of truth for prices:** Odoo is the ONLY place where prices live. No sync, no mismatch, no manual entry, no verification needed. Change a price in Odoo → next weighing uses the new price.
+
+3. **Lowest farmer complexity:** The farmer only needs to: put product on scale, select product on screen (or scan barcode), confirm. No programming scales, no PLU codes, no ASCII input.
+
+4. **Cheapest entry point:** Scale (€50–100) + Hub (€150) + Zebra printer (€200) = **€400–450 total** for a fully compliant labeling system.
+
+5. **Full control over UX:** Weight display, product selection, price display, label preview — all on the Hub's screen. The scale is invisible infrastructure.
+
+#### What the Hub needs for this (Development)
+
+**Certified Core (frozen after certification, ~500 lines of code):**
+
+| Component | Purpose | Complexity |
+|---|---|---|
+| `weight_reader.py` | Read stable weight from scale adapter (integer grams) | Low |
+| `price_calculator.py` | `total = weight_g × price_cents_per_kg // 1000` | Trivial |
+| `display_output.py` | Show weight + price on customer-facing display | Low |
+| `consistency.py` | Ensure weight/price/total match across all outputs | Medium |
+| `audit_writer.py` | Append-only, hash-chained JSONL log | Medium |
+| `core_api.py` | Expose `GET /weight`, `POST /calculate`, `GET /verify` | Low |
+
+Total estimated Certified Core: **~500 lines Python**, highly testable, rarely changes.
+
+**Uncertified Periphery (freely updatable):**
+
+| Component | Purpose | Changes often? |
+|---|---|---|
+| Scale adapters (CAS AP, USB HID, etc.) | Parse weight from different scales | Occasionally |
+| Label engine (ZPL, GS1 QR) | Generate LMIV-compliant labels | Yes |
+| Odoo sync | Product catalog, prices, PLU mapping | Yes |
+| Compliance YAML loader | Country-specific label rules | Yes |
+| Web dashboard | Product selection UI, operator interface | Yes |
+| OTA updater | Signed updates for periphery | Rarely |
+
+#### Certification Path
+
+| Step | Duration | Cost | Description |
+|---|---|---|---|
+| 1. Core Architecture Freeze | 2 weeks | €0 | Finalize Certified Core boundary, interfaces, test suite |
+| 2. Formal Test Suite | 4 weeks | €0 | 100% branch coverage on Core, property-based tests for price calc |
+| 3. Documentation Package | 2 weeks | €0 | WELMEC 7.2 compliance matrix, software architecture doc, risk analysis |
+| 4. Select Notified Body | 2 weeks | €0 | Contact BEV (AT) or PTB (DE) for "Prüfzeugnis" |
+| 5. Pre-Assessment | 4 weeks | €2–5k | Notified Body reviews architecture + documentation |
+| 6. Type Examination | 8–16 weeks | €8–20k | Formal testing of Certified Core against WELMEC 7.2 |
+| 7. Certificate Issued | — | — | "Baumusterprüfbescheinigung" for Hub + scale combination |
+| **Total** | **~6 months** | **€10–25k** | |
+
+**Re-certification:** Only needed when the Certified Core changes. Periphery updates (labels, Odoo, dashboard) do NOT trigger re-certification — this is the key architectural advantage.
+
+#### Legal Classification After Certification
+
+| Aspect | Before Certification | After Certification |
+|---|---|---|
+| Hub legal status | "Non-legally relevant" (WELMEC §5.3) | "Zusatzeinrichtung" (ancillary device) with Prüfzeugnis |
+| Price calculation | Scale only (Decision 01) | Hub (certified) or Scale (both valid) |
+| Compatible scales | Only price-computing scales | ANY OIML Class III weight scale |
+| WELMEC compliance | Argumentative (Decisions 01–07) | Formally certified |
+| BEV defensibility | Good (architecture-based) | **Bulletproof** (certificate) |
+| Market positioning | "Open source bridge" | **"Certified metrological system"** |
+
+#### Customer-Facing Display Requirement
+
+When the Hub calculates the price, the **customer must be able to see** weight, price/kg, and total — this is a legal requirement (Preisauszeichnungsgesetz, NAWI Art. 12). Options:
+
+| Display Option | Cost | Description |
+|---|---|---|
+| 7" HDMI touchscreen | €30–50 | Mounted near scale, shows weight + price + product |
+| 10" tablet (web app) | €100–150 | Hub serves a local web page, customer-facing |
+| E-ink display | €40–60 | Low-power, always-on, perfect for outdoor markets |
+| Dual-screen (operator + customer) | €80–100 | Operator selects product, customer sees result |
+
+**Recommended:** 7" HDMI touchscreen (€35) — connects directly to Pi, no network needed, works at outdoor markets without WiFi.
+
+#### Risk Analysis
+
+| Risk | Probability | Impact | Mitigation |
+|---|---|---|---|
+| Certification takes longer than expected | Medium | High (delays launch) | Start with Tier 2 (no certification), add Tier 0 later |
+| Certification costs more than estimated | Low | Medium | Certified Core is <500 LOC → small audit scope |
+| BEV rejects architecture | Low | High | Pre-assessment (Step 5) catches issues before formal test |
+| Re-certification needed on Core change | Low | Medium | Core is designed to be frozen — changes are extremely rare |
+| Customer display adds complexity | Low | Low | Off-the-shelf HDMI display, no custom hardware |
+
 ### Comparison Matrix
 
-| Option | Auto Sync | Hardware Cost | Complexity | Phase |
-|---|---|---|---|---|
-| A: Hub Price Display | Manual + verified | €0 (phone/tablet) | Low | **Phase 1** |
-| B: Barcode Recall | Manual + assisted | €30 (USB scanner) | Medium | Phase 1 |
-| C: Scale Upgrade | Fully automatic | €400–1,500+ | Low (new adapter) | Any time |
-| D: Virtual Printer | Auto-verified | €0 | Medium–High | **Phase 2** |
-| E: ES-Works Protocol | Potentially auto | €0 | High (reverse eng.) | Future |
+| Option | Auto Sync | Hardware Cost | Complexity | Certification | Phase |
+|---|---|---|---|---|---|
+| A: Hub Price Display | Manual + verified | €0 (phone/tablet) | Low | No | **Phase 1** |
+| B: Barcode Recall | Manual + assisted | €30 (USB scanner) | Medium | No | Phase 1 |
+| C: Scale Upgrade | Fully automatic | €400–1,500+ | Low (new adapter) | No | Any time |
+| D: Virtual Printer | Auto-verified | €0 | Medium–High | No | Phase 2 |
+| E: ES-Works Protocol | Potentially auto | €0 | High (reverse eng.) | No | Future |
+| **F: Hub Price Calc** | **Fully automatic** | **€35 (display)** | **Medium** | **Yes (€10–25k)** | **Phase 3** |
 
 ---
 

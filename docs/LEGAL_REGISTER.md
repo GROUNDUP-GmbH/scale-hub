@@ -1,6 +1,6 @@
 # Scale Hub — Legal Register & Architecture Decisions
 
-> **Status:** v4.0 · 2026-03-22
+> **Status:** v4.1 · 2026-03-22
 > **Maintainer:** Ground UP GmbH · FN 481220 b
 > **Product Page:** [architecture.html](architecture.html)
 > **Technical Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
@@ -226,3 +226,24 @@ See [LABEL_GUIDE.md](LABEL_GUIDE.md) for the full scenario documentation.
   The verification is logged in the audit chain regardless of mode.
 - **Consequence:** Even without automatic PLU sync, the system catches every price discrepancy. The dashboard reduces the farmer's cognitive load ("What changed?"). Strict mode is recommended for LEH/retail deliveries where price accuracy is contractually required.
 - **Sources:** Quality assurance best practice · EU FIC Reg. 1169/2011 Art. 8 (responsibility for correct information) · Austrian PAngV (Preisauszeichnungsgesetz)
+
+---
+
+### Decision 16: Hub as Certified Price Calculator — Tier 0 (Target Architecture)
+
+- **Status:** Proposed (Target for Phase 3, after market validation)
+- **Context:** Tier 1 and Tier 2 both require the scale to compute prices (weight × price/kg = total). This limits the Hub to price-computing scales (€200+) and creates synchronization complexity (PLU upload, manual price entry, mismatch detection). The fundamental question: what if the Hub takes over price calculation, using the scale purely as a certified weight sensor?
+  The BEV Information Sheet on POS Systems 2023 is clear: a device that performs "Preisfindung" (price determination) from scale data requires a "Prüfzeugnis" (type examination certificate). This means the Hub needs certification — but only the price-calculating component, not the entire system.
+- **Decision:** Introduce **Tier 0** as the long-term target architecture:
+  1. The **scale** provides certified weight only (any OIML Class III scale, €50–200)
+  2. The **Hub's Certified Core** (~500 lines of code) performs: weight reading, price calculation (`total_cents = weight_g × price_cents_per_kg // 1000`), consistency verification, and audit logging
+  3. The **Hub's Uncertified Periphery** handles: label generation, Odoo sync, compliance rules, dashboard, OTA updates
+  4. A **customer-facing display** (7" HDMI, €35) shows weight, price/kg, and total — required by Preisauszeichnungsgesetz
+  5. Certification scope is limited to the Certified Core — periphery updates do NOT trigger re-certification
+- **Prerequisite:** Market validation via Running Lean (Problem → Solution → Revenue fit) before committing to certification investment (€10–25k). See [PROTOCOL_CATALOG.md Option F](PROTOCOL_CATALOG.md#option-f-hub-as-certified-price-calculator--tier-0-recommended-long-term).
+- **Consequence:** Any OIML-certified weight scale becomes compatible. Farmer entry cost drops to ~€400 (scale €50–100 + Hub €150 + Zebra €200). Prices live exclusively in Odoo — zero synchronization, zero manual entry, zero mismatches. The certification is a one-time investment that creates a significant competitive moat.
+- **Phasing:**
+  - **Phase 1 (now):** Ship with Tier 2 (no certification needed)
+  - **Phase 2:** Validate market demand, build Certified Core architecture
+  - **Phase 3:** Certify with BEV/PTB, launch Tier 0
+- **Sources:** BEV Information Sheet POS Systems 2023 · WELMEC 7.2 §4.2, §5.3 · Directive 2014/31/EU · Austrian PAngV
