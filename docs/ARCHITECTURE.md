@@ -1,18 +1,27 @@
 # Scale Hub — Technical Architecture
 
-> **Status:** v2.0 · 2026-03-21
+> **Status:** v3.0 · 2026-03-22
 > **Maintainer:** Ground UP GmbH · FN 481220 b
 > **Product Page:** [architecture.html](architecture.html) (non-technical, StoryBrand)
 > **Legal Register:** [LEGAL_REGISTER.md](LEGAL_REGISTER.md)
 > **Label Guide:** [LABEL_GUIDE.md](LABEL_GUIDE.md)
+> **Protocol Catalog:** [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)
 
 ---
 
 ## Core Principle
 
-**The CAS ER-Plus scale is the sole authority for weight measurement and price calculation.**
+**The certified scale is the sole authority for weight measurement and price calculation.**
 
 Neither the Hub nor Odoo POS may alter measurement values or compute prices. The Hub is a controlled communication interface — classified as a "non-legally relevant ancillary system" under the European Software Guide for measuring instruments (WELMEC 7.2 §5.3).
+
+The Hub supports **multiple scale families** via an Adapter Pattern (see [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)):
+
+| Tier | Capability | Example Scales | Hub Role |
+|---|---|---|---|
+| **Tier 1** | Full PLU protocol | CAS LP/CL, DIGI SM, Mettler Toledo Tiger | PLU manager + data receiver |
+| **Tier 2** | Weight/price read-only | CAS ER-Plus, CAS AP, basic bench scales | Data receiver + virtual printer |
+| **Tier 2+** | Price send + weight receive | DIBAL | Price injector + data receiver |
 
 **Sources:** Directive 2014/31/EU Art. 1(2)(a) · Austrian Metrology Act (MEG) §8(1) · WELMEC 7.2 §4.2 · BEV Information Sheet on POS Systems 2023
 
@@ -20,39 +29,74 @@ Neither the Hub nor Odoo POS may alter measurement values or compute prices. The
 
 ## System Boundary
 
+### Tier 1 Scale (e.g., CAS LP, DIGI SM, Mettler Toledo Tiger)
+
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  NON-REGULATED ZONE                                                  │
-│  (No certification required — WELMEC 7.2 §5.3)                      │
+┌──────────────────────────────────────────────────────────────────────┐
+│  NON-REGULATED ZONE  (No certification required — WELMEC 7.2 §5.3)  │
 │                                                                      │
 │  ┌──────────────┐    ┌────────────────┐    ┌──────────────────┐     │
 │  │  Odoo 19     │    │  GroundUp Hub  │    │  Zebra Label     │     │
 │  │  ERP / POS   │◄──►│  (Raspberry Pi) │───►│  Printer         │     │
 │  │              │    │                │    │  (ZPL II)        │     │
-│  │  • Products  │    │  • State Mach. │    └──────────────────┘     │
-│  │  • Booking   │    │  • Audit Log   │                              │
-│  │  • Receipt   │    │  • PLU Mapping │    ┌──────────────────┐     │
-│  │  • Reports   │    │  • GS1 Builder │    │  Receipt Printer │     │
-│  └──────────────┘    │  • HMAC Auth   │    │  (via Odoo POS)  │     │
-│                      │  • Label Engine│    └──────────────────┘     │
-│                      └───────┬────────┘                              │
-│                              │                                       │
+│  │  • Products  │    │  • Adapter     │    └──────────────────┘     │
+│  │  • Booking   │    │  • State Mach. │                              │
+│  │  • Receipt   │    │  • Audit Log   │    ┌──────────────────┐     │
+│  │  • Reports   │    │  • PLU Sync ↕  │    │  Receipt Printer │     │
+│  └──────────────┘    │  • Label Engine│    │  (via Odoo POS)  │     │
+│                      └───────┬────────┘    └──────────────────┘     │
+│                              │ RS-232 / Ethernet                     │
+│                              │ (bidirectional)                       │
 ├──────────────────────────────┼───────────────────────────────────────┤
 │  SYSTEM BOUNDARY             │  WELMEC 7.2 §4.2 · Dir. 2014/31/EU  │
 ├──────────────────────────────┼───────────────────────────────────────┤
-│                              │                                       │
-│  METROLOGICALLY REGULATED    │  Port A (↕)  Port B (↓ TX only)     │
+│  METROLOGICALLY REGULATED    │                                       │
 │  (Dir. 2014/31/EU · MEG §8) │                                       │
 │                      ┌───────┴────────┐                              │
-│                      │  CAS ER-Plus   │                              │
-│                      │                │                              │
-│                      │  • Weight      │                              │
-│                      │  • Price/kg    │                              │
-│                      │  • Total price │                              │
-│                      │  • Verification│                              │
+│                      │  Tier 1 Scale  │  PLU upload from Hub ✓       │
+│                      │  (LP/CL/DIGI)  │  Weight/price to Hub ✓       │
+│                      │                │  Sales data to Hub ✓         │
+│                      │  • Weight      │  Built-in label printer ✓    │
+│                      │  • Price/kg    │                               │
+│                      │  • Total price │                               │
 │                      └────────────────┘                              │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Tier 2 Scale (e.g., CAS ER-Plus, basic bench scales)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  NON-REGULATED ZONE  (No certification required — WELMEC 7.2 §5.3)  │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+│  ┌──────────────┐    ┌────────────────┐    ┌──────────────────┐     │
+│  │  Odoo 19     │    │  GroundUp Hub  │    │  Zebra Label     │     │
+│  │  ERP / POS   │◄──►│  (Raspberry Pi) │───►│  Printer         │     │
+│  │              │    │                │    │  (ZPL II)        │     │
+│  │  • Products  │    │  • Adapter     │    └──────────────────┘     │
+│  │  • Booking   │    │  • State Mach. │                              │
+│  │  • Receipt   │    │  • Audit Log   │    ┌──────────────────┐     │
+│  │  • Reports   │    │  • Price Disp. │    │  Price Dashboard  │     │
+│  └──────────────┘    │  • Label Engine│    │  (Phone/Tablet/   │     │
+│                      │  • Verification│    │   HDMI Display)   │     │
+│                      └───────┬────────┘    └──────────────────┘     │
+│                              │ RS-232                                │
+│                              │ (Scale → Hub: print data / weight)    │
+│                              │ (Hub → Scale: NOT supported)          │
+├──────────────────────────────┼───────────────────────────────────────┤
+│  SYSTEM BOUNDARY             │  WELMEC 7.2 §4.2 · Dir. 2014/31/EU  │
+├──────────────────────────────┼───────────────────────────────────────┤
+│  METROLOGICALLY REGULATED    │                                       │
+│  (Dir. 2014/31/EU · MEG §8) │                                       │
+│                      ┌───────┴────────┐                              │
+│                      │  Tier 2 Scale  │  PLU upload from Hub ✗       │
+│                      │  (CAS ER-Plus) │  Weight/price to Hub ✓       │
+│                      │                │  Price entry: MANUAL         │
+│                      │  • Weight      │  No built-in label printer   │
+│                      │  • Price/kg    │                               │
+│                      │  • Total price │  Hub = virtual printer       │
+│                      └────────────────┘  (captures print stream)     │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -61,11 +105,21 @@ Neither the Hub nor Odoo POS may alter measurement values or compute prices. The
 
 | Component | Model | Role |
 |---|---|---|
-| Scale | CAS ER-Plus (RS232 x2 Comms Module) | Weighing + price calculation (certified) |
+| Scale | Any supported scale (see [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)) | Weighing + price calculation (certified) |
 | Hub | Raspberry Pi 5 (industrial enclosure) | Communication interface + label engine |
 | Label Printer | Zebra (ZPL II compatible) | Self-adhesive product labels |
 | Receipt Printer | Any ESC/POS | Driven by Odoo POS, not Hub |
-| Serial Adapters | 2× USB-to-RS232 | Port A (Full Duplex) + Port B (TX only) |
+| Serial Adapter | 1× USB-to-RS232 (per scale) | Single bidirectional port |
+| Price Display | Phone/Tablet/HDMI (optional) | Tier 2 only: price change notifications |
+
+### Reference Configurations
+
+| Configuration | Scale | Tier | PLU Sync | Total Cost (approx.) |
+|---|---|---|---|---|
+| **Starter** | CAS ER-Plus | 2 | Manual (Hub-assisted) | €400–600 |
+| **Standard** | CAS LP-1 | 1 | Automatic | €800–1,100 |
+| **Professional** | CAS CL5200 | 1 | Automatic + Ethernet | €1,700–2,200 |
+| **Enterprise** | DIGI SM-5300 | 1 | Automatic + Ethernet | €2,500+ |
 
 ---
 
@@ -87,6 +141,8 @@ Neither the Hub nor Odoo POS may alter measurement values or compute prices. The
 
 ## Data Flows
 
+### Tier 1 (Full PLU Protocol)
+
 | # | Flow | Direction | Content | Legal Basis |
 |---|---|---|---|---|
 | 1 | Product Selection | POS → Hub → Scale | `product_id` → PLU | WELMEC §4.4: documented commands only |
@@ -96,9 +152,24 @@ Neither the Hub nor Odoo POS may alter measurement values or compute prices. The
 | 5 | Label | Hub → Zebra | ZPL + GS1 QR + optional EAN-13 | EU FIC Reg. 1169/2011 Art. 9 |
 | 6 | Audit | Hub-internal | JSONL + SHA-256 chain | WELMEC §4.5: traceability |
 
+### Tier 2 (Weight/Price Read-Only — e.g., CAS ER-Plus)
+
+| # | Flow | Direction | Content | Legal Basis |
+|---|---|---|---|---|
+| 1 | Price Change Notification | Odoo → Hub → Dashboard | New prices for manual entry | — (operational, not metrological) |
+| 2 | Sale Data (print stream) | Scale → Hub | Weight, price/kg, total (via virtual printer) | Dir. 2014/31/EU: from certified instrument |
+| 3 | Price Verification | Hub-internal | Compare scale price vs. Odoo price | Quality assurance (not legally required) |
+| 4 | Sale Forwarding | Hub → Odoo POS | 1:1 from scale data | WELMEC §5.3: POS is not a terminal |
+| 5 | Label | Hub → Zebra | ZPL + GS1 QR + optional EAN-13 | EU FIC Reg. 1169/2011 Art. 9 |
+| 6 | Audit | Hub-internal | JSONL + SHA-256 chain | WELMEC §4.5: traceability |
+
+**Key difference:** Flow 1 and 4 are absent in Tier 2. The Hub cannot send data TO the scale. Instead, the Hub displays price changes on a local dashboard and the farmer enters them manually. Flow 3 (price verification) is a new safety net that catches human error.
+
 ---
 
 ## State Machine
+
+### Tier 1 (Hub controls PLU selection)
 
 ```
               ┌─────────┐
@@ -109,7 +180,7 @@ Neither the Hub nor Odoo POS may alter measurement values or compute prices. The
               ┌─────────┐
               │ LOCKED  │ ←── No config changes
               └────┬────┘
-                   │ Scale: sale data received (Port B)
+                   │ Scale: sale data received
                    ▼
               ┌─────────┐
               │PRINTING │ ←── Label generated + printed
@@ -121,29 +192,76 @@ Neither the Hub nor Odoo POS may alter measurement values or compute prices. The
               └─────────┘
 ```
 
-- PLU/price updates **only** accepted in `IDLE` state
-- During `LOCKED` or `PRINTING`, configuration changes are rejected
+### Tier 2 (Scale controls PLU, Hub receives)
+
+```
+              ┌─────────┐
+              │  IDLE   │ ←── Monitoring for print data
+              └────┬────┘
+                   │ Scale: print stream received (virtual printer)
+                   ▼
+              ┌──────────┐
+              │VERIFYING │ ←── Compare price with Odoo
+              └────┬─────┘
+                   │ Match? → proceed / Mismatch? → alert + proceed
+                   ▼
+              ┌─────────┐
+              │PRINTING │ ←── Zebra label generated + printed
+              └────┬────┘
+                   │ Forwarded to Odoo POS
+                   ▼
+              ┌─────────┐
+              │  IDLE   │
+              └─────────┘
+```
+
+- PLU/price updates **only** accepted in `IDLE` state (Tier 1)
+- Tier 2 adds a `VERIFYING` state for price cross-checking
+- During `LOCKED`, `VERIFYING`, or `PRINTING`, configuration changes are rejected
 - Every state transition is logged in the audit chain
 
 ---
 
-## Port Architecture (RS232 x2)
+## Port Architecture (Single Bidirectional RS-232)
 
-The CAS ER-Plus RS232 x2 Comms Module provides two physically separate serial ports:
+Each scale connects via **one RS-232 port** (or Ethernet for Tier 1 scales with TCP/IP). The Hub uses **protocol-level command separation** instead of physical port separation:
 
-**Port A — Full Duplex (Configuration)**
-- Direction: Hub ↔ Scale
-- Purpose: PLU selection, price lookups
-- Restriction: Only allowlisted `product_id` values accepted
-- Timing: Only during `IDLE` state
+### Tier 1 (Bidirectional)
 
-**Port B — TX Only (Sale Data)**
-- Direction: Scale → Hub
-- Purpose: Transmit completed sale data
-- Restriction: Hub cannot send to Port B (hardware-enforced)
-- Content: Weight, PLU, price/kg, total, timestamp
+```
+Hub ◄──── RS-232 / Ethernet ────► Scale
+     PLU Write (Hub → Scale)
+     PLU Read  (Hub ← Scale)
+     Weight    (Hub ← Scale)
+     Status    (Hub ← Scale)
+```
 
-Physical separation ensures that sale data flow cannot be influenced by the configuration channel. This directly addresses WELMEC §4.4.2.1(a)(b).
+- Allowlisted commands only (Decision 03)
+- PLU writes blocked during active weighing (state machine)
+- All commands logged in audit chain
+
+### Tier 2 (Effectively Unidirectional)
+
+```
+Hub ◄──── RS-232 ──── Scale
+     Print data  (Scale → Hub)
+     Weight req. (Hub → Scale, AP protocol)
+```
+
+- Hub receives print stream (virtual DEP-50/DLP-50 printer)
+- Hub can request weight via AP protocol (ENQ → 0x11 → response)
+- Hub **cannot** send PLU data to the scale
+- Unidirectional data flow is the strongest WELMEC compliance argument
+
+### Integrity Guarantee
+
+Without physical port separation, integrity is ensured through:
+1. **Allowlist** (Decision 03): Only documented commands accepted
+2. **State machine**: Configuration changes blocked during transactions
+3. **Audit log**: Every byte sent/received is logged with timestamp
+4. **Secure Boot** (Decision 07): Hub software cannot be modified
+
+This satisfies WELMEC §4.4.2.1(a)(b) through logical rather than physical separation.
 
 ---
 
@@ -209,13 +327,20 @@ groundup-scale-hub/              (future standalone repo)
 ├── docs/
 │   ├── architecture.html        ← Product page (StoryBrand)
 │   ├── ARCHITECTURE.md          ← This document
+│   ├── PROTOCOL_CATALOG.md      ← All verified scale protocols + Tier classification
 │   ├── LEGAL_REGISTER.md        ← Legal register + architecture decisions
 │   ├── LABEL_GUIDE.md           ← Label scenarios + mandatory fields
 │   └── legal/                   ← Legal texts (eu/, at/, hu/, ...)
 ├── hub/
 │   ├── app/                     ← FastAPI service
 │   │   ├── main.py
-│   │   ├── serial/              ← CAS adapter, port manager
+│   │   ├── adapters/            ← Scale adapters (one per protocol family)
+│   │   │   ├── base.py          ← ScaleAdapter protocol definition
+│   │   │   ├── cas_lp.py        ← CAS LP/CL binary protocol (Tier 1)
+│   │   │   ├── cas_er.py        ← CAS ER/AP simple protocol (Tier 2)
+│   │   │   ├── digi_sm.py       ← DIGI SM Ethernet protocol (Tier 1)
+│   │   │   ├── mettler_tiger.py ← Mettler Toledo Tiger (Tier 1)
+│   │   │   └── dibal.py         ← DIBAL EPOS TISA (Tier 2+)
 │   │   └── utils/               ← ZPL, GS1, label_profiles, audit
 │   ├── tests/
 │   ├── Dockerfile

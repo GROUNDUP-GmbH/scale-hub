@@ -1,9 +1,10 @@
 # Scale Hub — Legal Register & Architecture Decisions
 
-> **Status:** v3.0 · 2026-03-21
+> **Status:** v4.0 · 2026-03-22
 > **Maintainer:** Ground UP GmbH · FN 481220 b
 > **Product Page:** [architecture.html](architecture.html)
 > **Technical Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
+> **Protocol Catalog:** [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)
 > **Label Guide:** [LABEL_GUIDE.md](LABEL_GUIDE.md)
 
 ---
@@ -52,13 +53,18 @@ Each decision documents **why** we built the Hub the way we did — and which re
 
 ---
 
-### Decision 02: Physical Port Separation (RS232 x2)
+### Decision 02: Protocol-Level Command Separation (Single RS-232 Port)
 
-- **Status:** Accepted
-- **Context:** WELMEC §4.4.2.1 requires protection against unauthorized influence via communication interfaces. A single bidirectional port could theoretically allow sale data manipulation.
-- **Decision:** Port A (Full Duplex) is used exclusively for configuration/PLU selection. Port B (TX only) is used exclusively for sale data from the scale. Physical separation.
-- **Consequence:** Maximum protection against feedback. Two USB-RS232 adapters required.
-- **Sources:** WELMEC 7.2 §4.4.2.1(a)(b) · CAS ER-Plus RS232 x2 Comms Module Specification
+- **Status:** Accepted (corrected 2026-03-22 — previously assumed dual-port, which was incorrect)
+- **Context:** WELMEC §4.4.2.1 requires protection against unauthorized influence via communication interfaces. Most retail scales (CAS ER-Plus, LP, AP, etc.) have a **single optional RS-232 port**. Physical port separation is not available.
+- **Decision:** Integrity is ensured through **logical separation at the protocol level**:
+  1. **Allowlist** (Decision 03): Only documented, pre-approved commands are sent
+  2. **State machine** (Decision 06): Configuration changes are blocked during active transactions
+  3. **Audit log** (Decision 04): Every command sent and received is logged with hash chain
+  4. **Secure Boot** (Decision 07): Hub software cannot be modified in the field
+  5. For **Tier 2 scales** (CAS ER-Plus): The RS-232 data flow is effectively unidirectional (Scale → Hub as virtual printer), which is the strongest compliance argument
+- **Consequence:** Single USB-RS232 adapter per scale. Compliance rests on the combination of Decisions 03, 04, 06, 07 rather than physical wire separation.
+- **Sources:** WELMEC 7.2 §4.4.2.1(a)(b) · CAS ER-Plus User Manual (RS-232 = printer port)
 
 ---
 
@@ -191,3 +197,32 @@ See [LABEL_GUIDE.md](LABEL_GUIDE.md) for the full scenario documentation.
   5. **Verification endpoint:** `GET /verify/{sale_id}` shows all three data paths side-by-side for auditors.
 - **Consequence:** Bit-exact consistency is mathematically guaranteed. Rounding errors are impossible (integer arithmetic). Hash mismatch = tampering evidence.
 - **Sources:** WELMEC 7.2 §4.5 · EN 45501 §T.4.4 · BEV POS-Systeme 2023
+
+---
+
+### Decision 14: Scale Tier Classification and Adapter Pattern
+
+- **Status:** Accepted
+- **Context:** The Hub must support scales from multiple manufacturers with fundamentally different communication protocols — from full bidirectional PLU management (CAS LP, DIGI SM) to simple weight-read-only (CAS ER-Plus, basic bench scales). A single protocol assumption would limit market reach. Research verified 9+ distinct protocol families across 30+ scale models (see [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md)).
+- **Decision:** Three-tier classification:
+  - **Tier 1 — Full integration:** Scale supports PLU upload/download via RS-232 or Ethernet. Hub manages PLUs from Odoo automatically. Models: CAS LP/CL, DIGI SM, Mettler Toledo Tiger, Acom, МАССА-К ВПМ/ВП, МЕРА.
+  - **Tier 2 — Weight/price read-only:** Scale has no PLU upload capability. Hub receives weight/price data (via AP protocol or virtual printer). Price changes require manual entry on scale. Models: CAS ER-Plus, CAS AP/AD/DB/EB/ED/HB/HD/PB/PDC/PDI/SW/SWN, PR LCD.
+  - **Tier 2+ — Bidirectional price:** Scale accepts price injection but not PLU names. Models: DIBAL (EPOS TISA protocol).
+  Each tier maps to a `ScaleAdapter` implementation with the same output interface (`SaleData` with integer grams + integer cents).
+- **Consequence:** The Hub Core, label engine, and Odoo integration are tier-agnostic. Adding a new scale = one adapter module + tests. Tier limitations are transparently documented to the farmer during onboarding.
+- **Sources:** [PROTOCOL_CATALOG.md](PROTOCOL_CATALOG.md) · [Scale-Soft.com](https://scale-soft.com/) · [rkeeper RK7 Documentation](https://docs.rkeeper.ru/rk7/latest/ru/podderyoivaemye-drajvery-vesov-10819223.html)
+
+---
+
+### Decision 15: Tier 2 Price Verification and Dashboard
+
+- **Status:** Accepted
+- **Context:** When a farmer using a Tier 2 scale (e.g., CAS ER-Plus) changes a product price in Odoo, the scale does not update automatically. This creates a risk of inconsistency: Odoo says €24.90/kg, the scale still has €22.90/kg. Unlike Tier 1, there is no protocol command to sync the price. The farmer must enter prices manually — but how does the farmer know which prices changed?
+- **Decision:** The Hub provides two mechanisms:
+  1. **Price Change Dashboard:** A local web page (accessible via smartphone, tablet, or HDMI display) showing all pending price changes from Odoo. Changed items are highlighted with old price → new price. Farmer confirms each entry after updating the scale.
+  2. **Automatic Price Verification:** After each weighing, the Hub compares the scale's price/kg (received from the print data stream) against Odoo's stored price. On mismatch:
+     - **Warn mode** (default): Label prints with a visual warning, dashboard shows alert
+     - **Strict mode** (optional): Label printing is blocked until the scale price matches Odoo
+  The verification is logged in the audit chain regardless of mode.
+- **Consequence:** Even without automatic PLU sync, the system catches every price discrepancy. The dashboard reduces the farmer's cognitive load ("What changed?"). Strict mode is recommended for LEH/retail deliveries where price accuracy is contractually required.
+- **Sources:** Quality assurance best practice · EU FIC Reg. 1169/2011 Art. 8 (responsibility for correct information) · Austrian PAngV (Preisauszeichnungsgesetz)
